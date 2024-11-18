@@ -47,3 +47,37 @@ query {
 }
 ```
 
+## How it works
+
+This example demonstrates how to use TakeShape's vector capabilities combined with indexing to enable the RAG use-case. A prerequisite for RAG is to populate a vector database, for this example we will use TakeShape's built-in index. The first step to preparing our data is to create the `Document` which extends the built-in Asset shape from TakeShape but adds `chunks` an array of text chunks and their corresponding vector embeddings.
+```mermaid
+sequenceDiagram
+    participant TakeShape
+    participant Unstructured
+    participant OpenAI
+    participant Index
+
+    TakeShape->>Unstructured: 1. Assets uploaded to TakeShape are sent to Unstructured
+    Unstructured->>TakeShape: 2. Unstructured parses and chunks the documents
+    TakeShape->>OpenAI: 3. Create embeddings the text chunks
+    OpenAI->>TakeShape: 4. OpenAI returns embeddings
+    TakeShape->>Index: 5. Text chunks and embeddings in TakeShape Index
+```
+
+Now that our `Document` data is stored in the built-in index we can perform RAG:
+```mermaid
+sequenceDiagram
+    actor User
+    participant TakeShape
+    participant Index
+    participant OpenAI
+
+    User->>TakeShape: 1. GraphQL containing user prompt
+    TakeShape->>OpenAI: 2. Create embedding of user prompt
+    OpenAI->>TakeShape: 3. OpenAI returns vector
+    TakeShape->>Index: 4. Use vector to search TakeShape Index
+    Index->>TakeShape: 5. Return related products
+    TakeShape->>OpenAI: 6. Combine related results with original prompt and send to GPT 4o
+    OpenAI->>TakeShape: 7. OpenAI returns generated text
+    TakeShape->>User: 8. GraphQL response
+```
