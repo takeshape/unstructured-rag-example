@@ -1,0 +1,213 @@
+{
+  "defaultLocale": "en-us",
+  "locales": ["en-us"],
+  "queries": {
+    "getDocument": {
+      "shape": "Document",
+      "resolver": {
+        "name": "shapedb:get",
+        "service": "shapedb",
+        "shapeName": "Asset"
+      },
+      "description": "Get a Document by ID",
+      "args": "TSGetArgs<Document>"
+    },
+    "getDocumentList": {
+      "shape": "PaginatedList<Document>",
+      "resolver": {
+        "name": "shapedb:list",
+        "service": "shapedb",
+        "shapeName": "Asset",
+        "results": {
+          "ops": [
+            {"path": "$", "mapping": "$finalResolver"},
+            {"path": "$.items[*]._shapeId", "value": "ijCvxfGh7"}
+          ]
+        }
+      },
+      "description": "Returns a list Document in natural order.",
+      "args": "TSListArgs<Document>"
+    },
+    "getIndexedDocumentList": {
+      "shape": "PaginatedList<Document>",
+      "resolver": {
+        "shapeName": "Document",
+        "name": "takeshape:queryApiIndex",
+        "service": "takeshape",
+        "options": {"indexedShape": "Document"}
+      },
+      "args": "TSListArgs<Document>"
+    },
+    "getRelatedDocumentList": {
+      "shape": "PaginatedList<Document>",
+      "resolver": {
+        "compose": [
+          {
+            "name": "ai:createEmbedding",
+            "id": "createEmbedding",
+            "service": "openai",
+            "model": "text-embedding-3-small",
+            "args": {"ops": [{"path": "input", "mapping": "$args.text"}]}
+          },
+          {
+            "shapeName": "Document",
+            "name": "takeshape:vectorSearch",
+            "service": "takeshape",
+            "args": {
+              "ops": [
+                {"path": "vector.name", "value": "chunks.vector"},
+                {
+                  "path": "vector.value",
+                  "mapping": "$resolvers.createEmbedding"
+                },
+                {"path": "size", "mapping": "$args.size"}
+              ]
+            }
+          }
+        ]
+      },
+      "args": {
+        "type": "object",
+        "properties": {"text": {"type": "string"}, "size": {"type": "integer"}},
+        "required": ["text"]
+      }
+    }
+  },
+  "mutations": {
+    "chat": {
+      "shape": "TSChatResponse",
+      "args": "TSChatArgs",
+      "resolver": {
+        "compose": [
+          {
+            "name": "delegate",
+            "id": "getRelatedDocumentList",
+            "to": "Query.getRelatedDocumentList",
+            "options": {
+              "selectionSet": "{ items { filename path chunks { text page_number } } }"
+            },
+            "args": {
+              "ops": [
+                {"path": "text", "mapping": "$args.input"},
+                {"path": "size", "value": "2"}
+              ]
+            },
+            "results": {
+              "ops": [{"path": "$", "mapping": "$currentResolver.items[0]"}]
+            }
+          },
+          {
+            "name": "ai:chat",
+            "service": "openai",
+            "model": "gpt-4o-2024-08-06",
+            "systemPrompt": "You are a helpful assistant.",
+            "inputTemplate": "Answer the following question:\n{$args.input} \n\nby using the following text:\n {$resultsById.getRelatedDocumentList.chunks[0].text}\n\nCite your answer using the following filename:\n{$resultsById.getRelatedDocumentList.filename}",
+            "options": {
+              "frequencyPenalty": 0,
+              "presencePenalty": 0,
+              "temperature": 0,
+              "toolChoice": "auto",
+              "maxToolRoundtrips": 10
+            }
+          }
+        ]
+      }
+    }
+  },
+  "shapes": {
+    "Chunk": {
+      "id": "Chunk",
+      "name": "Chunk",
+      "title": "Chunk",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "text": {"type": "string", "title": "Text"},
+          "page_number": {"type": "string", "title": "Page Number"},
+          "vector": {
+            "@tag": "vector1536",
+            "@dependencies": "{text}",
+            "@resolver": {
+              "name": "ai:createEmbedding",
+              "service": "openai",
+              "model": "text-embedding-3-small",
+              "options": {"useDependencies": true}
+            },
+            "type": "array",
+            "items": {"type": "number"}
+          }
+        }
+      }
+    },
+    "Document": {
+      "id": "ijCvxfGh7",
+      "name": "Document",
+      "title": "Document",
+      "cache": {
+        "enabled": true,
+        "triggers": [{"type": "schedule", "interval": 3600, "loader": "list"}]
+      },
+      "loaders": {"list": {"query": "getDocumentList"}},
+      "schema": {
+        "type": "object",
+        "properties": {
+          "path": {"type": "string", "title": "Path"},
+          "filename": {"type": "string", "title": "File Name"},
+          "chunks": {
+            "type": "array",
+            "@indexed": {"nested": true},
+            "@resolver": {
+              "name": "ai:parseFile",
+              "service": "unstructured",
+              "args": {"ops": [{"path": "url", "mapping": "$source.path"}]}
+            },
+            "items": {"@ref": "local:Chunk"}
+          }
+        }
+      }
+    }
+  },
+  "workflows": {},
+  "forms": {
+    "Document": {
+      "default": {
+        "properties": {"path": {"widget": "singleLineText"}},
+        "order": ["path"]
+      }
+    }
+  },
+  "schemaVersion": "3.47.0",
+  "apiVersion": "2",
+  "services": {
+    "openai": {
+      "id": "openai",
+      "title": "OpenAI",
+      "namespace": "OpenAI",
+      "provider": "openai",
+      "serviceType": "openapi",
+      "authenticationType": "bearer",
+      "options": {
+        "endpoint": "https://api.openai.com/v1/",
+        "spec": "https://raw.githubusercontent.com/takeshape/openapi-specs/813784d8fcac5b3fd4e468ce6f715b89c9fcb73f/specs/openai/v2.yml",
+        "transformVersion": "2.0.0",
+        "introspectedAt": "2024-10-14T23:21:54.543Z"
+      }
+    },
+    "unstructured": {
+      "id": "unstructured",
+      "title": "Unstructured",
+      "provider": "unstructured",
+      "serviceType": "rest",
+      "authenticationType": "bearer",
+      "options": {
+        "endpoint": "https://api.unstructuredapp.io",
+        "partitioning": [
+          {
+            "match": "*.pdf",
+            "settings": {"strategy": "fast", "chunkingStrategy": "basic"}
+          }
+        ]
+      }
+    }
+  }
+}

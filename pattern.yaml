@@ -1,0 +1,8 @@
+name: Unstructured Rag Example
+description: 'An example of how to use RAG with Unstructured and OpenAI'
+defaultTimezone: America/New_York
+categories:
+  - OpenAI
+  - Unstructured
+  - AI
+  - RAG
