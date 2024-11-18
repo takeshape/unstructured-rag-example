@@ -1,11 +1,11 @@
 # Unstructured RAG Example
-<a href="https://app.takeshape.io/add-pattern?repo=https://github.com/takeshape/unstructured-rag-example/tree/main"><img alt="Deploy To TakeShape" src="https://images.takeshape.io/2cccc825-70be-431c-9ba0-10ab38ecd3a7/dev/8e2f7bda-0e08-4ede-a546-6df59be6a8bb/Deploy%20to%20TakeShape%402x.png?auto=format%2Ccompress" width="205" height="38" style="max-width:100%;"></a>
+<a href="https://app.takeshape.io/add-pattern?repo=https://github.com/takeshape/unstructured-rag-example"><img alt="Deploy To TakeShape" src="https://images.takeshape.io/2cccc825-70be-431c-9ba0-10ab38ecd3a7/dev/8e2f7bda-0e08-4ede-a546-6df59be6a8bb/Deploy%20to%20TakeShape%402x.png?auto=format%2Ccompress" width="205" height="38" style="max-width:100%;"></a>
 
 
 ## Instructions
 
 ### Create a new TakeShape Project
-1. Click [Deploy to TakeShape](https://app.takeshape.io/add-pattern?repo=https://github.com/takeshape/unstructured-rag-example/tree/main).
+1. Click [Deploy to TakeShape](https://app.takeshape.io/add-pattern?repo=https://github.com/takeshape/unstructured-rag-example).
 1. Select "Create new project" from the dropdown
 1. Enter a name for the new project or leave the default
 1. Click "Add to TakeShape"
